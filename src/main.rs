@@ -1,51 +1,47 @@
-extern crate sdl2;
+extern crate minifb;
+use minifb::*;
 
-use sdl2::pixels::Color;
-use sdl2::event::Event;
-use sdl2::keyboard::Keycode;
-use sdl2::rect::Point;
+mod triangle;
+use crate::triangle::*;
+
 use std::time::Duration;
 use std::time::Instant;
 
-mod triangle;
+fn main() {
+    let window_size = (800, 600);
+    let mut buffer: Vec<u32> = vec![0; window_size.0 * window_size.1];
 
-use crate::triangle::*;
+    let mut window = Window::new(
+        ":)",
+        window_size.0,
+        window_size.1,
+        WindowOptions::default()
+    )
+    .unwrap_or_else(|e| {
+        panic!("{}", e);
+    });
 
-pub fn main() {
-    let window_size = (1280, 720);
-    let sdl_context = sdl2::init().unwrap();
-    let video_subsystem = sdl_context.video().unwrap();
 
-    let window = video_subsystem.window("rust-sdl2 demo", window_size.0, window_size.1)
-        .position_centered()
-        .build()
-        .unwrap();
-
-    let mut canvas = window.into_canvas().build().unwrap();
-    
-    canvas.set_draw_color(Color::RGB(0, 255, 255));
-    canvas.clear();
-    canvas.present();
-    let mut event_pump = sdl_context.event_pump().unwrap();
+    window.limit_update_rate(Some(std::time::Duration::from_micros(0)));
 
     let mut triangle = Triangle{
-        p0: Vector2{ x: 0.9, y: 0.1 },
-        p1: Vector2{ x: 0.5, y: 0.3 },
-        p2: Vector2{ x: 0.5, y: 0.9 }
+        p0: Vector2{ x: 0.5, y: 0.1 },
+        p1: Vector2{ x: 0.1, y: 0.9 },
+        p2: Vector2{ x: 0.9, y: 0.9 }
     };
 
-    let mut direction_x = (1.1, -1.0, -0.8);
-    let mut direction_y = (1.1, -1.0, -0.8);
+    // let mut direction_x = ( 1.1, -1.0, -0.8);
+    // let mut direction_y = (-0.7,  0.3,  0.4);
+
+    let mut direction_x = (0.0, 0.0, 0.0);
+    let mut direction_y = (0.0, 0.0, 0.0);
 
     let mut i = 0;
     let mut delta = 0.0;
 
-    'running: loop {
+    while window.is_open() && !window.is_key_down(Key::Escape) {
         let now = Instant::now();
-        i = (i + 1) % 500;
-
-        canvas.set_draw_color(Color::RGB(0, 0, 0));
-        canvas.clear();
+        i = (i + 1) % 100;
 
         triangle.p0.x += 0.5 * direction_x.0 * delta;
         triangle.p1.x += 0.5 * direction_x.1 * delta;
@@ -86,42 +82,34 @@ pub fn main() {
         for x in 0..window_size.0 {
             for y in 0..window_size.1 {
 
-                if (x as i32) > raster_ranges[y as usize].0 && (x as i32) < raster_ranges[y as usize].1 {
-                    canvas.set_draw_color(Color::RGB(255, 255, 255));
+                let (left, right, right_color, left_color) = raster_ranges[y as usize];
+
+                let color = if (x as i32) >= left && (x as i32) < right {
+                    let full = right - left;
+                    let right_dist = right - x as i32;
+                    let left_dist = x as i32 - left;
+
+                    let color = (
+                        (right_color.0 as i32 * left_dist + left_color.0 as i32 * right_dist) / full,
+                        (right_color.1 as i32 * left_dist + left_color.1 as i32 * right_dist) / full,
+                        (right_color.2 as i32 * left_dist + left_color.2 as i32 * right_dist) / full
+                    );
+
+                    (color.0 << 16 | color.1 << 8 | color.2) as u32
                 } else {
-                    canvas.set_draw_color(Color::RGB(0, 0, 0));
-                }
+                    0u32
+                };
 
-                canvas.draw_point(Point::new(x as i32, y as i32)).unwrap();
+                buffer[y * window_size.0 + x] = color;
             }
         }
 
-        // canvas.set_draw_color(Color::RGB(255, 255, 255));
-        // for y in 0..window_size.1 {
-        //     let (start, stop) = raster_ranges[y as usize];
 
-        //     if start != stop {
-        //         canvas.draw_line(Point::new(start, y as i32), Point::new(stop, y as i32)).unwrap();
-        //     }
-        // }
+        window.update_with_buffer(&buffer, window_size.0, window_size.1).unwrap();
 
-        for event in event_pump.poll_iter() {
-            match event {
-                Event::Quit {..} |
-                Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
-                    break 'running
-                },
-                _ => {}
-            }
-        }
-        // The rest of the game loop goes here...
-
-        canvas.present();
-        // ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
-        
         delta = now.elapsed().as_secs_f64();
         if i == 0 {
-            println!("{}", delta);
+            println!("{} fps", 1.0 / delta);
         }
     }
 }

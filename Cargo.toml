@@ -8,3 +8,17 @@ edition = "2021"
 [dependencies]
 sdl2 = "0.35.1"
 glam = "0.20.2"
+minifb = "0.20.0"
+
+[profile.release]
+opt-level = 3
+debug = false
+rpath = false
+# lto = true
+debug-assertions = false
+codegen-units = 16
+panic = 'unwind'
+incremental = false
+overflow-checks = false
+
+
