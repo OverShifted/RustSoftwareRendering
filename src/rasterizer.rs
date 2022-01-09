@@ -77,7 +77,7 @@ impl Rasterizer for TriangleRasterizer {
         for y_int in 0..canvas_size.1 {
 
             // Remap 0 -> h to 1 -> -1
-            let y = -((y_int as real / canvas_size.1 as real * 2.0) - 1.0);
+            let y = -((y_int as real / canvas_size.1 as real * 2.0) - 1.0) - (1.0 / canvas_size.1 as real);
 
             out.push(
                 if y < p0.pos.y || y > p2.pos.y {
