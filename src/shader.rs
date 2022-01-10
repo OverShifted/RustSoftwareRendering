@@ -11,11 +11,11 @@ pub trait Shader {
     fn vertex(&self, vertex: &Self::Vertex) -> (Vec3, Self::VertexShaderOut);
     fn fragment(&self, varyings: &Self::VertexShaderOut) -> Vec4;
 
-    fn draw(&self, buffer: &mut Buffer, vertices: &[Self::Vertex]) {
-        for triangle_vertices in vertices.chunks_exact(3) {
-            let (p0, varyings0) = self.vertex(&triangle_vertices[0]);
-            let (p1, varyings1) = self.vertex(&triangle_vertices[1]);
-            let (p2, varyings2) = self.vertex(&triangle_vertices[2]);
+    fn draw(&self, buffer: &mut Buffer, vertices: &[Self::Vertex], indices: &[usize]) {
+        for triangle_indices in indices.chunks_exact(3) {
+            let (p0, varyings0) = self.vertex(&vertices[triangle_indices[0]]);
+            let (p1, varyings1) = self.vertex(&vertices[triangle_indices[1]]);
+            let (p2, varyings2) = self.vertex(&vertices[triangle_indices[2]]);
 
             let mut raster_ranges = Vec::new();
             TriangleRasterizer.rasterize(
