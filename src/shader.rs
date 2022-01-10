@@ -4,13 +4,12 @@ use crate::rasterizer::*;
 
 use glam::Vec3Swizzles;
 
-type VertexShaderOut = Vec2;
 pub trait Shader {
     type Vertex;
-    // type VertexShaderOut: std::ops::Mul<real> + std::ops::Add;
+    type VertexShaderOut: Interpolate;
 
-    fn vertex(&self, vertex: &Self::Vertex) -> (Vec3, VertexShaderOut);
-    fn fragment(&self, varyings: &VertexShaderOut) -> Vec4;
+    fn vertex(&self, vertex: &Self::Vertex) -> (Vec3, Self::VertexShaderOut);
+    fn fragment(&self, varyings: &Self::VertexShaderOut) -> Vec4;
 
     fn draw(&self, buffer: &mut Buffer, vertices: &[Self::Vertex]) {
         for triangle_vertices in vertices.chunks_exact(3) {
@@ -37,8 +36,8 @@ pub trait Shader {
                         let right_weights = Vec3::from(right_weights);
 
                         let weights = left_weights.lerp(right_weights, (x as real - left as real) / (right as real - left as real));
-
-                        buffer.set_pixel(x, y, &self.fragment(&(varyings0 * weights.x + varyings1 * weights.y + varyings2 * weights.z)).to_array().map(|f| f as f32)[0..3]).unwrap();
+                        let interpolated = Self::VertexShaderOut::interpolate(&varyings0, &varyings1, &varyings2, &weights);
+                        buffer.set_pixel(x, y, &self.fragment(&interpolated).to_array().map(|f| f as f32)[0..3]).unwrap();
                     }
 
                 }

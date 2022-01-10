@@ -1,4 +1,5 @@
 use minifb::*;
+use noise::{NoiseFn, Perlin};
 
 mod buffer;
 mod utils;
@@ -10,17 +11,47 @@ use crate::shader::*;
 
 use std::time::Instant;
 
-struct SimpleShader;
+struct SimpleShader {
+    pub perlin: Perlin,
+    pub grad: colorgrad::Gradient
+}
+
+impl SimpleShader {
+    fn get_color(&self, val: real) -> Vec4 {
+        let sea_level = 0.2;
+        let mountain_level = 0.5;
+        let snow_level = 0.9;
+
+        if val < sea_level {
+            Vec4::new(0.0, 0.0, 1.0, 1.0)
+        } else if val < mountain_level {
+            Vec4::new(0.0, 1.0, 0.0, 1.0)
+        } else if val < snow_level {
+            Vec4::new(0.2, 0.2, 0.0, 1.0)
+        } else {
+            Vec4::new(1.0, 1.0, 1.0, 1.0)
+        }
+    }
+}
+
 impl Shader for SimpleShader {
     type Vertex = (Vec3, Vec2);
-    // type VertexShaderOut = Vec2;
+    type VertexShaderOut = Vec2;
 
     fn vertex(&self, vertex: &Self::Vertex) -> (Vec3, Vec2) {
         *vertex
     }
 
     fn fragment(&self, varyings: &Vec2) -> Vec4 {
-        Vec4::new(varyings.x, varyings.y, 0.0, 1.0)
+        // Vec4::new(varyings.x, varyings.y, 0.0, 1.0)
+        let val = self.perlin.get(varyings.to_array().map(|v| v * 5.0)).remap(-1.0, 1.0, 0.0, 1.0);
+        let val = self.grad.at(val);
+        Vec4::new(val.r, val.g, val.b, val.a)
+        // Vec4::new(val, val, val, 1.0)
+        // let val = self.get_color(val);
+        // Vec4::new(val, val, val, 1.0)
+        // val
+        // Vec4::new(varyings.x, varyings.y, 0.0, 1.0)
         // Vec4::new(weights.x, weights.y, weights.z, 1.0)
         // Vec4::new(1.0, 1.0, 1.0, 1.0)
     }
@@ -41,6 +72,13 @@ fn main() {
         panic!("{}", e);
     });
 
+    let shader = SimpleShader{
+        perlin: Perlin::new(),
+        grad: colorgrad::CustomGradient::new()
+            .html_colors(&["blue", "green", "brown", "white"])
+            .build().unwrap() 
+    };
+
     let mut i = 0;
     let mut delta;
 
@@ -52,7 +90,7 @@ fn main() {
         i = (i + 1) % 100;
         
         frame_buffer.clear();
-        SimpleShader.draw(&mut frame_buffer, &[
+        shader.draw(&mut frame_buffer, &[
             // Vec3::new( 0.0,  0.6, 0.0),
             // Vec3::new(-0.6, -0.6, 0.0),
             // Vec3::new( x, y, 0.0),

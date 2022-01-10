@@ -1,39 +1,3 @@
-pub type real = f64;
-pub type Vec2 = glam::DVec2;
-pub type Vec3 = glam::DVec3;
-pub type Vec4 = glam::DVec4;
-pub type Mat4 = glam::DMat4;
-
-pub trait Remap {
-    fn remap(self, a: Self, b: Self, new_a: Self, new_b: Self) -> Self;
-}
-
-impl Remap for real {
-    fn remap(self, a: Self, b: Self, new_a: Self, new_b: Self) -> Self {
-        new_a + (self - a) * (new_b - new_a) / (b - a)
-    }
-}
-
-pub trait NumLike: std::ops::Mul<real, Output = Self> + std::ops::Add<Self, Output = Self> + Copy {}
-
-impl NumLike for real {}
-impl NumLike for Vec2 {}
-impl NumLike for Vec3 {}
-impl NumLike for Vec4 {}
-impl NumLike for Mat4 {}
-
-pub trait Interpolate {
-    fn interpolate(p0: &Self, p1: &Self, p2: &Self, weights: &Vec3) -> Self;
-}
-
-impl<T> Interpolate for T 
-    where T: NumLike
-{
-    fn interpolate(p0: &Self, p1: &Self, p2: &Self, weights: &Vec3) -> Self {
-        *p0 * weights.x + *p1 * weights.y + *p2 * weights.z
-    }
-}
-
 impl<A: Interpolate, B: Interpolate> Interpolate for (A, B) {
     fn interpolate(p0: &Self, p1: &Self, p2: &Self, weights: &Vec3) -> Self {
         (
@@ -158,3 +122,5 @@ impl<A: Interpolate, B: Interpolate, C: Interpolate, D: Interpolate, E: Interpol
         )
     }
 }
+
+
