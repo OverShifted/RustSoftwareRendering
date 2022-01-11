@@ -18,10 +18,10 @@ struct SimpleShader {
 }
 
 impl Shader for SimpleShader {
-    type Vertex = (Vec3, Vec3);
-    type VertexShaderOut = Vec3;
+    type Vertex = (Vec3, Vec2);
+    type VertexShaderOut = Vec2;
 
-    fn vertex(&self, vertex: &Self::Vertex) -> (Vec3, Vec3) {
+    fn vertex(&self, vertex: &Self::Vertex) -> (Vec3, Vec2) {
         let (pos, tex_pos) = *vertex;
 
         let t = self.t * 2.0;
@@ -31,8 +31,16 @@ impl Shader for SimpleShader {
         ((mat * Vec4::new(pos.x, pos.y, pos.z, 0.0)).xyz(), tex_pos)
     }
 
-    fn fragment(&self, varyings: &Vec3) -> Vec4 {
-        Vec4::new(varyings.x, varyings.y, varyings.z, 1.0)
+    fn fragment(&self, varyings: &Vec2) -> Vec4 {
+        let total = (varyings.x * 10.0).floor() +
+                    (varyings.y * 10.0).floor();
+        let is_even = total % 2.0 == 0.0;
+        let col1 = Vec4::new(0.0, 0.0, 0.0, 1.0);
+        let col2 = Vec4::new(1.0, 1.0, 1.0, 1.0);
+
+        // Vec4::new(varyings.x, varyings.y, 0.0, 1.0)
+
+        if is_even { col1 } else { col2 }
     }
 }
 
@@ -51,13 +59,18 @@ fn main() {
         panic!("{}", e);
     });
 
-    window.limit_update_rate(Some(std::time::Duration::from_micros(16600)));
+    // window.limit_update_rate(Some(std::time::Duration::from_micros(16600)));
 
     let mut shader = SimpleShader{
         t: 0.0,
-        camera: Mat4::orthographic_rh(
-            -2.0, 2.0, -2.0, 2.0,
-            -0.5, 0.5
+        // camera: Mat4::orthographic_rh(
+        //     -2.0, 2.0, -2.0, 2.0,
+        //     -0.5, 0.5
+        // )
+        camera: Mat4::perspective_rh(
+            (600.0 as real).to_radians(),
+            window_size.0 as real / window_size.1 as real,
+            0.01, 100.0
         )
     };
 
@@ -70,35 +83,35 @@ fn main() {
         
         frame_buffer.clear();
         shader.draw(&mut frame_buffer, &[
-            (Vec3::new(-0.5,  0.5,  0.5), Vec3::new(1.0, 0.0, 0.0)),
-            (Vec3::new(-0.5, -0.5,  0.5), Vec3::new(1.0, 0.0, 0.0)),
-            (Vec3::new( 0.5,  0.5,  0.5), Vec3::new(1.0, 0.0, 0.0)),
-            (Vec3::new( 0.5, -0.5,  0.5), Vec3::new(1.0, 0.0, 0.0)),
+            (Vec3::new(-0.5,  0.5,  0.5), Vec2::new(0.0, 0.0)),
+            (Vec3::new(-0.5, -0.5,  0.5), Vec2::new(1.0, 0.0)),
+            (Vec3::new( 0.5,  0.5,  0.5), Vec2::new(0.0, 1.0)),
+            (Vec3::new( 0.5, -0.5,  0.5), Vec2::new(1.0, 1.0)),
 
-            (Vec3::new(-0.5,  0.5, -0.5), Vec3::new(0.0, 1.0, 0.0)),
-            (Vec3::new(-0.5, -0.5, -0.5), Vec3::new(0.0, 1.0, 0.0)),
-            (Vec3::new(-0.5,  0.5,  0.5), Vec3::new(0.0, 1.0, 0.0)),
-            (Vec3::new(-0.5, -0.5,  0.5), Vec3::new(0.0, 1.0, 0.0)),
+            (Vec3::new(-0.5,  0.5, -0.5), Vec2::new(0.0, 0.0)),
+            (Vec3::new(-0.5, -0.5, -0.5), Vec2::new(1.0, 0.0)),
+            (Vec3::new(-0.5,  0.5,  0.5), Vec2::new(0.0, 1.0)),
+            (Vec3::new(-0.5, -0.5,  0.5), Vec2::new(1.0, 1.0)),
 
-            (Vec3::new(-0.5,  0.5,  0.5), Vec3::new(0.0, 0.0, 1.0)),
-            (Vec3::new( 0.5,  0.5,  0.5), Vec3::new(0.0, 0.0, 1.0)),
-            (Vec3::new(-0.5,  0.5, -0.5), Vec3::new(0.0, 0.0, 1.0)),
-            (Vec3::new( 0.5,  0.5, -0.5), Vec3::new(0.0, 0.0, 1.0)),
+            (Vec3::new(-0.5,  0.5,  0.5), Vec2::new(0.0, 0.0)),
+            (Vec3::new( 0.5,  0.5,  0.5), Vec2::new(1.0, 0.0)),
+            (Vec3::new(-0.5,  0.5, -0.5), Vec2::new(0.0, 1.0)),
+            (Vec3::new( 0.5,  0.5, -0.5), Vec2::new(1.0, 1.0)),
 
-            (Vec3::new(-0.5, -0.5,  0.5), Vec3::new(0.0, 1.0, 1.0)),
-            (Vec3::new( 0.5, -0.5,  0.5), Vec3::new(0.0, 1.0, 1.0)),
-            (Vec3::new(-0.5, -0.5, -0.5), Vec3::new(0.0, 1.0, 1.0)),
-            (Vec3::new( 0.5, -0.5, -0.5), Vec3::new(0.0, 1.0, 1.0)),
+            (Vec3::new(-0.5, -0.5,  0.5), Vec2::new(0.0, 0.0)),
+            (Vec3::new( 0.5, -0.5,  0.5), Vec2::new(1.0, 0.0)),
+            (Vec3::new(-0.5, -0.5, -0.5), Vec2::new(0.0, 1.0)),
+            (Vec3::new( 0.5, -0.5, -0.5), Vec2::new(1.0, 1.0)),
 
-            (Vec3::new( 0.5,  0.5, -0.5), Vec3::new(1.0, 1.0, 0.0)),
-            (Vec3::new( 0.5, -0.5, -0.5), Vec3::new(1.0, 1.0, 0.0)),
-            (Vec3::new( 0.5,  0.5,  0.5), Vec3::new(1.0, 1.0, 0.0)),
-            (Vec3::new( 0.5, -0.5,  0.5), Vec3::new(1.0, 1.0, 0.0)),
+            (Vec3::new( 0.5,  0.5, -0.5), Vec2::new(0.0, 0.0)),
+            (Vec3::new( 0.5, -0.5, -0.5), Vec2::new(1.0, 0.0)),
+            (Vec3::new( 0.5,  0.5,  0.5), Vec2::new(0.0, 1.0)),
+            (Vec3::new( 0.5, -0.5,  0.5), Vec2::new(1.0, 1.0)),
 
-            (Vec3::new(-0.5,  0.5, -0.5), Vec3::new(1.0, 0.0, 1.0)),
-            (Vec3::new(-0.5, -0.5, -0.5), Vec3::new(1.0, 0.0, 1.0)),
-            (Vec3::new( 0.5,  0.5, -0.5), Vec3::new(1.0, 0.0, 1.0)),
-            (Vec3::new( 0.5, -0.5, -0.5), Vec3::new(1.0, 0.0, 1.0)),
+            (Vec3::new(-0.5,  0.5, -0.5), Vec2::new(0.0, 0.0)),
+            (Vec3::new(-0.5, -0.5, -0.5), Vec2::new(1.0, 0.0)),
+            (Vec3::new( 0.5,  0.5, -0.5), Vec2::new(0.0, 1.0)),
+            (Vec3::new( 0.5, -0.5, -0.5), Vec2::new(1.0, 1.0)),
 
         ], &[
             0, 1, 2,

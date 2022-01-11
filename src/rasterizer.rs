@@ -117,8 +117,8 @@ impl Rasterizer for TriangleRasterizer {
 
                     (
                         (
-                            ((left + 1.0) * canvas_size.0 as real / 2.0).round() as i32,
-                            ((right + 1.0) * canvas_size.0 as real / 2.0).round() as i32
+                            ((left + 1.0) * canvas_size.0 as real / 2.0).ceil() as i32,
+                            ((right + 1.0) * canvas_size.0 as real / 2.0).ceil() as i32
                         ),
                         (influences[0].0, influences[1].0, influences[2].0),
                         (influences[0].1, influences[1].1, influences[2].1),
