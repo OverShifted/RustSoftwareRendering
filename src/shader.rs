@@ -17,12 +17,12 @@ pub trait Shader {
             let (p1, varyings1) = self.vertex(&vertices[triangle_indices[1]]);
             let (p2, varyings2) = self.vertex(&vertices[triangle_indices[2]]);
 
+            // println!("{}, {}, {}", &p0.z, &p1.z, &p2.z);
+
             let mut raster_ranges = Vec::new();
             TriangleRasterizer.rasterize(
                 (buffer.width, buffer.height),
-                &[
-                    p0.xy(), p1.xy(), p2.xy()
-                ],
+                &[p0.xy(), p1.xy(), p2.xy()],
                 &mut raster_ranges
             );
 
@@ -37,7 +37,18 @@ pub trait Shader {
 
                         let weights = left_weights.lerp(right_weights, (x as real - left as real) / (right as real - left as real));
                         let interpolated = Self::VertexShaderOut::interpolate(&varyings0, &varyings1, &varyings2, &weights);
-                        buffer.set_pixel(x, y, &self.fragment(&interpolated).to_array().map(|f| f as f32)[0..3]).unwrap();
+
+                        let fragment_depth = real::interpolate(&p0.z, &p1.z, &p2.z, &weights);
+                        let fragment_color = &self.fragment(&interpolated).to_array();
+                        let fragment = [
+                            fragment_color[0] as f32,
+                            fragment_color[1] as f32,
+                            fragment_color[2] as f32,
+                            fragment_depth as f32
+                        ];
+
+                        buffer.set_pixel(x, y, &fragment).unwrap();
+                        // println!("{}", fragment_depth);
                     }
 
                 }

@@ -9,7 +9,13 @@ pub trait Remap {
     fn remap(self, a: Self, b: Self, new_a: Self, new_b: Self) -> Self;
 }
 
-impl Remap for real {
+impl Remap for f32 {
+    fn remap(self, a: Self, b: Self, new_a: Self, new_b: Self) -> Self {
+        new_a + (self - a) * (new_b - new_a) / (b - a)
+    }
+}
+
+impl Remap for f64 {
     fn remap(self, a: Self, b: Self, new_a: Self, new_b: Self) -> Self {
         new_a + (self - a) * (new_b - new_a) / (b - a)
     }
