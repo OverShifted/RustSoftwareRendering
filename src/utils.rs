@@ -1,3 +1,4 @@
+#[allow(non_camel_case_types)]
 pub type real = f64;
 pub type Vec2 = glam::DVec2;
 pub type Vec3 = glam::DVec3;
