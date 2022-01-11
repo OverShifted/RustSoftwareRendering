@@ -24,9 +24,9 @@ impl Shader for SimpleShader {
     fn vertex(&self, vertex: &Self::Vertex) -> (Vec3, Vec3) {
         let (pos, tex_pos) = *vertex;
 
-        let t = self.t.sin() * 2.0;
+        let t = self.t * 2.0;
 
-        let mat = self.camera * Mat4::from_rotation_y(t) * Mat4::from_rotation_x(t);
+        let mat = self.camera * Mat4::from_rotation_y(t) * Mat4::from_rotation_x(t * 2.0);
 
         ((mat * Vec4::new(pos.x, pos.y, pos.z, 0.0)).xyz(), tex_pos)
     }
@@ -57,7 +57,7 @@ fn main() {
         t: 0.0,
         camera: Mat4::orthographic_rh(
             -2.0, 2.0, -2.0, 2.0,
-            -1.0, 1.0
+            -0.5, 0.5
         )
     };
 
@@ -80,12 +80,44 @@ fn main() {
             (Vec3::new(-0.5,  0.5,  0.5), Vec3::new(0.0, 1.0, 0.0)),
             (Vec3::new(-0.5, -0.5,  0.5), Vec3::new(0.0, 1.0, 0.0)),
 
+            (Vec3::new(-0.5,  0.5,  0.5), Vec3::new(0.0, 0.0, 1.0)),
+            (Vec3::new( 0.5,  0.5,  0.5), Vec3::new(0.0, 0.0, 1.0)),
+            (Vec3::new(-0.5,  0.5, -0.5), Vec3::new(0.0, 0.0, 1.0)),
+            (Vec3::new( 0.5,  0.5, -0.5), Vec3::new(0.0, 0.0, 1.0)),
+
+            (Vec3::new(-0.5, -0.5,  0.5), Vec3::new(0.0, 1.0, 1.0)),
+            (Vec3::new( 0.5, -0.5,  0.5), Vec3::new(0.0, 1.0, 1.0)),
+            (Vec3::new(-0.5, -0.5, -0.5), Vec3::new(0.0, 1.0, 1.0)),
+            (Vec3::new( 0.5, -0.5, -0.5), Vec3::new(0.0, 1.0, 1.0)),
+
+            (Vec3::new( 0.5,  0.5, -0.5), Vec3::new(1.0, 1.0, 0.0)),
+            (Vec3::new( 0.5, -0.5, -0.5), Vec3::new(1.0, 1.0, 0.0)),
+            (Vec3::new( 0.5,  0.5,  0.5), Vec3::new(1.0, 1.0, 0.0)),
+            (Vec3::new( 0.5, -0.5,  0.5), Vec3::new(1.0, 1.0, 0.0)),
+
+            (Vec3::new(-0.5,  0.5, -0.5), Vec3::new(1.0, 0.0, 1.0)),
+            (Vec3::new(-0.5, -0.5, -0.5), Vec3::new(1.0, 0.0, 1.0)),
+            (Vec3::new( 0.5,  0.5, -0.5), Vec3::new(1.0, 0.0, 1.0)),
+            (Vec3::new( 0.5, -0.5, -0.5), Vec3::new(1.0, 0.0, 1.0)),
+
         ], &[
             0, 1, 2,
             3, 1, 2,
 
-            6, 4, 5,
-            6, 7, 5
+            4, 5, 6,
+            7, 5, 6,
+
+            8, 9, 10,
+            11, 9, 10,
+
+            12, 13, 14,
+            15, 13, 14,
+
+            16, 17, 18,
+            19, 17, 18,
+
+            20, 21, 22,
+            23, 21, 22,
         ]);
 
         frame_buffer.fill_window_buffer(&mut window_buffer, window.is_key_down(Key::D)).unwrap();
@@ -96,7 +128,15 @@ fn main() {
             println!("{} fps", 1.0 / delta);
         }
 
-        shader.t += 0.01;
+        // if window.is_key_down(Key::Right) {
+        //     shader.t += 0.01;
+        //     shader.t = shader.t % (2.0 * 3.14);
+        // } else if window.is_key_down(Key::Left) {
+        //     shader.t -= 0.01;
+        //     shader.t = shader.t % (2.0 * 3.14);
+        // }
+
+        shader.t += 0.005;
         shader.t = shader.t % (2.0 * 3.14);
     }
 }
