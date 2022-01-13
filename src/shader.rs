@@ -89,6 +89,10 @@ pub trait Shader {
 
             for y in (p0.0.y as i32)..(p2.0.y as i32) {
 
+                if y >= buffer.height as i32 {
+                    break;
+                }
+
                 let mut influences = [
                     (0.0, 0.0),
                     (0.0, 0.0),
@@ -96,7 +100,7 @@ pub trait Shader {
                 ];
 
                 let mut full = edge_full.next();
-                let mut half = if y <= p1.0.y as i32 {
+                let mut half = if y < p1.0.y as i32 {
                     edge_up_half.next()
                 } else {
                     edge_down_half.next()
@@ -105,9 +109,9 @@ pub trait Shader {
                 full.0 = full.0.ceil();
                 half.0 = half.0.ceil();
 
-                influences[p0.1].0 = if y <= p1.0.y as i32 { 1.0 - half.1 } else { 0.0 };
-                influences[p1.1].0 = if y <= p1.0.y as i32 { half.1 } else { 1.0 - half.1 };
-                influences[p2.1].0 = if y <= p1.0.y as i32 { 0.0 } else { half.1 };
+                influences[p0.1].0 = if y < p1.0.y as i32 { 1.0 - half.1 } else { 0.0 };
+                influences[p1.1].0 = if y < p1.0.y as i32 { half.1 } else { 1.0 - half.1 };
+                influences[p2.1].0 = if y < p1.0.y as i32 { 0.0 } else { half.1 };
 
                 influences[p0.1].1 = 1.0 - full.1;
                 influences[p1.1].1 = 0.0;
@@ -116,25 +120,30 @@ pub trait Shader {
                 let (min, max) = if full.0 > half.0 {
                     (half.0, full.0)
                 } else {
-                    influences[p0.1] = (influences[p0.1].1, influences[p0.1].0);
-                    influences[p1.1] = (influences[p1.1].1, influences[p1.1].0);
-                    influences[p2.1] = (influences[p2.1].1, influences[p2.1].0);
+                    influences[0] = (influences[0].1, influences[0].0);
+                    influences[1] = (influences[1].1, influences[1].0);
+                    influences[2] = (influences[2].1, influences[2].0);
 
                     (full.0, half.0)
                 };
 
+                let left_weights = Vec3::new(influences[0].0, influences[1].0, influences[2].0);
+                let right_weights = Vec3::new(influences[0].1, influences[1].1, influences[2].1);
+
                 let mut x_ratio = 0.0;
                 let x_ratio_step = 1.0 / (max - min);
                 for x in (min as i32)..(max as i32) {
-                    let left_weights = Vec3::new(influences[0].0, influences[1].0, influences[2].0);
-                    let right_weights = Vec3::new(influences[0].1, influences[1].1, influences[2].1);
+                    if x >= buffer.width as i32 {
+                        break;
+                    }
+
                     let weights = lerp(left_weights, right_weights, x_ratio);
 
-                    let fragment_colors = self.fragment(&Self::VertexShaderOut::interpolate(&varyings0, &varyings1, &varyings2, &weights)) * 255.0;
+                    let fragment_colors = self.fragment(&Self::VertexShaderOut::interpolate(&varyings0, &varyings1, &varyings2, &weights));
                     let fragment = [
-                        fragment_colors[0] as f32,
-                        fragment_colors[1] as f32,
-                        fragment_colors[2] as f32,
+                        fragment_colors.x as f32,
+                        fragment_colors.y as f32,
+                        fragment_colors.z as f32,
                         real::interpolate(&p0_unsorted.z, &p1_unsorted.z, &p2_unsorted.z, &weights) as f32
                     ];
 

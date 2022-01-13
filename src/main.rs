@@ -36,8 +36,6 @@ impl Shader for SimpleShader {
         let col1 = Vec4::new(0.0, 0.0, 0.0, 1.0);
         let col2 = Vec4::new(1.0, 1.0, 1.0, 1.0);
 
-        // Vec4::new(varyings.x, varyings.y, 0.0, 1.0)
-
         if is_even { col1 } else { col2 }
     }
 }
@@ -61,15 +59,15 @@ fn main() {
 
     let mut shader = SimpleShader{
         t: 0.0,
-        // camera: Mat4::orthographic_rh(
-        //     -2.0, 2.0, -2.0, 2.0,
-        //     -0.5, 0.5
-        // )
-        camera: Mat4::perspective_rh(
-            (600.0 as real).to_radians(),
-            window_size.0 as real / window_size.1 as real,
-            0.01, 100.0
+        camera: Mat4::orthographic_rh(
+            -2.0, 2.0, -2.0, 2.0,
+            -0.5, 0.5
         )
+        // camera: Mat4::perspective_rh(
+        //     (600.0 as real).to_radians(),
+        //     window_size.0 as real / window_size.1 as real,
+        //     0.01, 100.0
+        // )
     };
 
     let mut i = 0;
@@ -111,9 +109,9 @@ fn main() {
             (Vec3::new( 0.5,  0.5, -0.5), Vec2::new(0.0, 1.0)),
             (Vec3::new( 0.5, -0.5, -0.5), Vec2::new(1.0, 1.0)),
 
-            (Vec3::new( -1.0,  0.5,  0.5), Vec2::new(0.0, 0.0)),
-            (Vec3::new( -0.9,  0.0,  0.5), Vec2::new(1.0, 0.0)),
-            (Vec3::new( -0.5,  -0.5,  0.5), Vec2::new(0.0, 1.0)),
+            // (Vec3::new( -1.0,  0.5,  0.5), Vec2::new(0.0, 0.0)),
+            // (Vec3::new( -0.9,  0.0,  0.5), Vec2::new(1.0, 0.0)),
+            // (Vec3::new( -0.5,  -0.5,  0.5), Vec2::new(0.0, 1.0)),
 
         ], &[
             0, 1, 2,
