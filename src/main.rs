@@ -4,7 +4,6 @@ use glam::Vec4Swizzles;
 
 mod buffer;
 mod utils;
-mod rasterizer;
 mod shader;
 use crate::utils::*;
 use crate::buffer::*;
@@ -25,7 +24,6 @@ impl Shader for SimpleShader {
         let (pos, tex_pos) = *vertex;
 
         let t = self.t * 2.0;
-
         let mat = self.camera * Mat4::from_rotation_y(t) * Mat4::from_rotation_x(t * 2.0);
 
         ((mat * Vec4::new(pos.x, pos.y, pos.z, 0.0)).xyz(), tex_pos)
@@ -75,7 +73,7 @@ fn main() {
     };
 
     let mut i = 0;
-    let mut delta;
+    let mut delta = 0.0;
 
     while window.is_open() && !window.is_key_down(Key::Escape) {
         let now = Instant::now();
@@ -113,6 +111,10 @@ fn main() {
             (Vec3::new( 0.5,  0.5, -0.5), Vec2::new(0.0, 1.0)),
             (Vec3::new( 0.5, -0.5, -0.5), Vec2::new(1.0, 1.0)),
 
+            (Vec3::new( -1.0,  0.5,  0.5), Vec2::new(0.0, 0.0)),
+            (Vec3::new( -0.9,  0.0,  0.5), Vec2::new(1.0, 0.0)),
+            (Vec3::new( -0.5,  -0.5,  0.5), Vec2::new(0.0, 1.0)),
+
         ], &[
             0, 1, 2,
             3, 1, 2,
@@ -136,20 +138,20 @@ fn main() {
         frame_buffer.fill_window_buffer(&mut window_buffer, window.is_key_down(Key::D)).unwrap();
         window.update_with_buffer(&window_buffer, window_size.0, window_size.1).unwrap();
 
+        if window.is_key_down(Key::Right) {
+            shader.t += 0.5 * delta;
+            shader.t = shader.t % (2.0 * 3.14);
+        } else if window.is_key_down(Key::Left) {
+            shader.t -= 0.5 * delta;
+            shader.t = shader.t % (2.0 * 3.14);
+        }
+
+        // shader.t += 0.005;
+        // shader.t = shader.t % (2.0 * 3.14);
+
         delta = now.elapsed().as_secs_f64();
         if i == 0 {
             println!("{} fps", 1.0 / delta);
         }
-
-        // if window.is_key_down(Key::Right) {
-        //     shader.t += 0.01;
-        //     shader.t = shader.t % (2.0 * 3.14);
-        // } else if window.is_key_down(Key::Left) {
-        //     shader.t -= 0.01;
-        //     shader.t = shader.t % (2.0 * 3.14);
-        // }
-
-        shader.t += 0.005;
-        shader.t = shader.t % (2.0 * 3.14);
     }
 }

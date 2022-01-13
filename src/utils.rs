@@ -21,6 +21,12 @@ impl Remap for f64 {
     }
 }
 
+impl Remap for Vec2 {
+    fn remap(self, a: Self, b: Self, new_a: Self, new_b: Self) -> Self {
+        new_a + (self - a) * (new_b - new_a) / (b - a)
+    }
+}
+
 pub trait NumLike: std::ops::Mul<real, Output = Self> + std::ops::Add<Self, Output = Self> + Copy {}
 
 impl NumLike for real {}
