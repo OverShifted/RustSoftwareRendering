@@ -1,6 +1,7 @@
 use minifb::*;
 // use noise::{NoiseFn, Perlin};
 use glam::Vec4Swizzles;
+use image::GenericImageView;
 
 mod buffer;
 mod utils;
@@ -13,7 +14,8 @@ use std::time::Instant;
 
 struct SimpleShader {
     pub t: real,
-    pub camera: Mat4
+    pub camera: Mat4,
+    pub img: image::DynamicImage
 }
 
 impl Shader for SimpleShader {
@@ -30,13 +32,19 @@ impl Shader for SimpleShader {
     }
 
     fn fragment(&self, varyings: &Vec2) -> Vec4 {
-        let total = (varyings.x * 10.0).floor() +
-                    (varyings.y * 10.0).floor();
-        let is_even = total % 2.0 == 0.0;
-        let col1 = Vec4::new(0.0, 0.0, 0.0, 1.0);
-        let col2 = Vec4::new(1.0, 1.0, 1.0, 1.0);
+        let pixel = self.img.get_pixel(
+            (varyings.x * (self.img.width() as real - 0.001)) as u32,
+            (varyings.y * (self.img.height() as real - 0.001)) as u32
+        ).0;
 
-        if is_even { col1 } else { col2 }
+        let pixel = Vec4::new(
+            pixel[0] as real,
+            pixel[1] as real,
+            pixel[2] as real,
+            pixel[3] as real,
+        );
+
+        pixel / 255.0
     }
 }
 
@@ -60,14 +68,10 @@ fn main() {
     let mut shader = SimpleShader{
         t: 0.0,
         camera: Mat4::orthographic_rh(
-            -2.0, 2.0, -2.0, 2.0,
+            -1.2, 1.2, -1.2, 1.2,
             -0.5, 0.5
-        )
-        // camera: Mat4::perspective_rh(
-        //     (600.0 as real).to_radians(),
-        //     window_size.0 as real / window_size.1 as real,
-        //     0.01, 100.0
-        // )
+        ),
+        img: image::open("crate.jpg").unwrap()
     };
 
     let mut i = 0;
@@ -136,16 +140,14 @@ fn main() {
         frame_buffer.fill_window_buffer(&mut window_buffer, window.is_key_down(Key::D)).unwrap();
         window.update_with_buffer(&window_buffer, window_size.0, window_size.1).unwrap();
 
-        if window.is_key_down(Key::Right) {
-            shader.t += 0.5 * delta;
-            shader.t = shader.t % (2.0 * 3.14);
-        } else if window.is_key_down(Key::Left) {
-            shader.t -= 0.5 * delta;
-            shader.t = shader.t % (2.0 * 3.14);
-        }
+        // if window.is_key_down(Key::Right) {
+        //     shader.t += 0.5 * delta;
+        // } else if window.is_key_down(Key::Left) {
+        //     shader.t -= 0.5 * delta;
+        // }
 
-        // shader.t += 0.005;
-        // shader.t = shader.t % (2.0 * 3.14);
+        shader.t += 0.1 * delta;
+        shader.t = shader.t % (2.0 * 3.14);
 
         delta = now.elapsed().as_secs_f64();
         if i == 0 {
