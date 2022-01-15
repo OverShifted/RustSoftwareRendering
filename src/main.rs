@@ -14,27 +14,33 @@ use std::time::Instant;
 
 struct SimpleShader {
     pub t: real,
+    pub light: Vec3,
     pub camera: Mat4,
     pub img: image::DynamicImage
 }
 
 impl Shader for SimpleShader {
-    type Vertex = (Vec3, Vec2);
-    type VertexShaderOut = Vec2;
+    type Vertex = (Vec3, Vec3, Vec2);
+    type VertexShaderOut = (Vec3, Vec2);
 
-    fn vertex(&self, vertex: &Self::Vertex) -> (Vec3, Vec2) {
-        let (pos, tex_pos) = *vertex;
+    fn vertex(&self, vertex: &Self::Vertex) -> (Vec3, Self::VertexShaderOut) {
+        let (pos, normal, tex_pos) = *vertex;
 
         let t = self.t * 2.0;
         let mat = self.camera * Mat4::from_rotation_y(t) * Mat4::from_rotation_x(t * 2.0);
 
-        ((mat * Vec4::new(pos.x, pos.y, pos.z, 0.0)).xyz(), tex_pos)
+        (
+            (mat * Vec4::new(pos.x, pos.y, pos.z, 1.0)).xyz(),
+            (normal, tex_pos)
+        )
     }
 
-    fn fragment(&self, varyings: &Vec2) -> Vec4 {
+    fn fragment(&self, varyings: &Self::VertexShaderOut) -> Vec4 {
+        let (normal, tex_pos) = *varyings;
+
         let pixel = self.img.get_pixel(
-            (varyings.x * (self.img.width() as real - 0.001)) as u32,
-            (varyings.y * (self.img.height() as real - 0.001)) as u32
+            (tex_pos.x * (self.img.width() as real - 0.001)) as u32,
+            (tex_pos.y * (self.img.height() as real - 0.001)) as u32
         ).0;
 
         let pixel = Vec4::new(
@@ -42,9 +48,10 @@ impl Shader for SimpleShader {
             pixel[1] as real,
             pixel[2] as real,
             pixel[3] as real,
-        );
+        ) / 255.0;
 
-        pixel / 255.0
+        let light = normal.dot(self.light).max(0.0) + 0.4;
+        pixel * light
     }
 }
 
@@ -67,10 +74,18 @@ fn main() {
 
     let mut shader = SimpleShader{
         t: 0.0,
-        camera: Mat4::orthographic_rh(
-            -1.2, 1.2, -1.2, 1.2,
-            -0.5, 0.5
-        ),
+        light: Vec3::new(0.5, 1.2, 0.8).normalize(),
+        camera: Mat4::perspective_rh(
+            (100.0 as real).to_radians(),
+            window_size.0 as real / window_size.1 as real,
+            0.01, 100.0
+        ) * Mat4::from_scale_rotation_translation(
+            Vec3::ONE,
+            Quat::IDENTITY,
+            // TODO: Z element dose not work.
+            // Vec3::new(1.0, 1.0, 10.0)
+            Vec3::ZERO
+        ).inverse(),
         img: image::open("crate.jpg").unwrap()
     };
 
@@ -83,35 +98,35 @@ fn main() {
         
         frame_buffer.clear();
         shader.draw(&mut frame_buffer, &[
-            (Vec3::new(-0.5,  0.5,  0.5), Vec2::new(0.0, 0.0)),
-            (Vec3::new(-0.5, -0.5,  0.5), Vec2::new(1.0, 0.0)),
-            (Vec3::new( 0.5,  0.5,  0.5), Vec2::new(0.0, 1.0)),
-            (Vec3::new( 0.5, -0.5,  0.5), Vec2::new(1.0, 1.0)),
+            (Vec3::new(-0.5,  0.5,  0.5), Vec3::new(0.0, 0.0, 1.0), Vec2::new(0.0, 0.0)),
+            (Vec3::new(-0.5, -0.5,  0.5), Vec3::new(0.0, 0.0, 1.0), Vec2::new(1.0, 0.0)),
+            (Vec3::new( 0.5,  0.5,  0.5), Vec3::new(0.0, 0.0, 1.0), Vec2::new(0.0, 1.0)),
+            (Vec3::new( 0.5, -0.5,  0.5), Vec3::new(0.0, 0.0, 1.0), Vec2::new(1.0, 1.0)),
 
-            (Vec3::new(-0.5,  0.5, -0.5), Vec2::new(0.0, 0.0)),
-            (Vec3::new(-0.5, -0.5, -0.5), Vec2::new(1.0, 0.0)),
-            (Vec3::new(-0.5,  0.5,  0.5), Vec2::new(0.0, 1.0)),
-            (Vec3::new(-0.5, -0.5,  0.5), Vec2::new(1.0, 1.0)),
+            (Vec3::new(-0.5,  0.5, -0.5), Vec3::new(-1.0, 0.0, 0.0), Vec2::new(0.0, 0.0)),
+            (Vec3::new(-0.5, -0.5, -0.5), Vec3::new(-1.0, 0.0, 0.0), Vec2::new(1.0, 0.0)),
+            (Vec3::new(-0.5,  0.5,  0.5), Vec3::new(-1.0, 0.0, 0.0), Vec2::new(0.0, 1.0)),
+            (Vec3::new(-0.5, -0.5,  0.5), Vec3::new(-1.0, 0.0, 0.0), Vec2::new(1.0, 1.0)),
 
-            (Vec3::new(-0.5,  0.5,  0.5), Vec2::new(0.0, 0.0)),
-            (Vec3::new( 0.5,  0.5,  0.5), Vec2::new(1.0, 0.0)),
-            (Vec3::new(-0.5,  0.5, -0.5), Vec2::new(0.0, 1.0)),
-            (Vec3::new( 0.5,  0.5, -0.5), Vec2::new(1.0, 1.0)),
+            (Vec3::new(-0.5,  0.5,  0.5), Vec3::new(0.0, 1.0, 0.0), Vec2::new(0.0, 0.0)),
+            (Vec3::new( 0.5,  0.5,  0.5), Vec3::new(0.0, 1.0, 0.0), Vec2::new(1.0, 0.0)),
+            (Vec3::new(-0.5,  0.5, -0.5), Vec3::new(0.0, 1.0, 0.0), Vec2::new(0.0, 1.0)),
+            (Vec3::new( 0.5,  0.5, -0.5), Vec3::new(0.0, 1.0, 0.0), Vec2::new(1.0, 1.0)),
 
-            (Vec3::new(-0.5, -0.5,  0.5), Vec2::new(0.0, 0.0)),
-            (Vec3::new( 0.5, -0.5,  0.5), Vec2::new(1.0, 0.0)),
-            (Vec3::new(-0.5, -0.5, -0.5), Vec2::new(0.0, 1.0)),
-            (Vec3::new( 0.5, -0.5, -0.5), Vec2::new(1.0, 1.0)),
+            (Vec3::new(-0.5, -0.5,  0.5), Vec3::new(0.0, -1.0, 0.0), Vec2::new(0.0, 0.0)),
+            (Vec3::new( 0.5, -0.5,  0.5), Vec3::new(0.0, -1.0, 0.0), Vec2::new(1.0, 0.0)),
+            (Vec3::new(-0.5, -0.5, -0.5), Vec3::new(0.0, -1.0, 0.0), Vec2::new(0.0, 1.0)),
+            (Vec3::new( 0.5, -0.5, -0.5), Vec3::new(0.0, -1.0, 0.0), Vec2::new(1.0, 1.0)),
 
-            (Vec3::new( 0.5,  0.5, -0.5), Vec2::new(0.0, 0.0)),
-            (Vec3::new( 0.5, -0.5, -0.5), Vec2::new(1.0, 0.0)),
-            (Vec3::new( 0.5,  0.5,  0.5), Vec2::new(0.0, 1.0)),
-            (Vec3::new( 0.5, -0.5,  0.5), Vec2::new(1.0, 1.0)),
+            (Vec3::new( 0.5,  0.5, -0.5), Vec3::new(1.0, 0.0, 0.0), Vec2::new(0.0, 0.0)),
+            (Vec3::new( 0.5, -0.5, -0.5), Vec3::new(1.0, 0.0, 0.0), Vec2::new(1.0, 0.0)),
+            (Vec3::new( 0.5,  0.5,  0.5), Vec3::new(1.0, 0.0, 0.0), Vec2::new(0.0, 1.0)),
+            (Vec3::new( 0.5, -0.5,  0.5), Vec3::new(1.0, 0.0, 0.0), Vec2::new(1.0, 1.0)),
 
-            (Vec3::new(-0.5,  0.5, -0.5), Vec2::new(0.0, 0.0)),
-            (Vec3::new(-0.5, -0.5, -0.5), Vec2::new(1.0, 0.0)),
-            (Vec3::new( 0.5,  0.5, -0.5), Vec2::new(0.0, 1.0)),
-            (Vec3::new( 0.5, -0.5, -0.5), Vec2::new(1.0, 1.0)),
+            (Vec3::new(-0.5,  0.5, -0.5), Vec3::new(0.0, 0.0, -1.0), Vec2::new(0.0, 0.0)),
+            (Vec3::new(-0.5, -0.5, -0.5), Vec3::new(0.0, 0.0, -1.0), Vec2::new(1.0, 0.0)),
+            (Vec3::new( 0.5,  0.5, -0.5), Vec3::new(0.0, 0.0, -1.0), Vec2::new(0.0, 1.0)),
+            (Vec3::new( 0.5, -0.5, -0.5), Vec3::new(0.0, 0.0, -1.0), Vec2::new(1.0, 1.0)),
 
             // (Vec3::new( -1.0,  0.5,  0.5), Vec2::new(0.0, 0.0)),
             // (Vec3::new( -0.9,  0.0,  0.5), Vec2::new(1.0, 0.0)),

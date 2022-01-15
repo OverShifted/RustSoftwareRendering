@@ -3,6 +3,7 @@ pub type real = f64;
 pub type Vec2 = glam::DVec2;
 pub type Vec3 = glam::DVec3;
 pub type Vec4 = glam::DVec4;
+pub type Quat = glam::DQuat;
 pub type Mat4 = glam::DMat4;
 
 pub trait Remap {

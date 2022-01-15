@@ -88,17 +88,6 @@ pub trait Shader {
             let mut edge_down_half = Edge::new(p1.0.xy(), p2.0.xy());
 
             for y in (p0.0.y as i32)..(p2.0.y as i32) {
-
-                if y >= buffer.height as i32 {
-                    break;
-                }
-
-                let mut influences = [
-                    (0.0, 0.0),
-                    (0.0, 0.0),
-                    (0.0, 0.0)
-                ];
-
                 let mut full = edge_full.next();
                 let mut half = if y < p1.0.y as i32 {
                     edge_up_half.next()
@@ -106,8 +95,18 @@ pub trait Shader {
                     edge_down_half.next()
                 };
 
+                if y >= buffer.height as i32 || y < 0 {
+                    continue;
+                }
+
                 full.0 = full.0.ceil();
                 half.0 = half.0.ceil();
+
+                let mut influences = [
+                    (0.0, 0.0),
+                    (0.0, 0.0),
+                    (0.0, 0.0)
+                ];
 
                 influences[p0.1].0 = if y < p1.0.y as i32 { 1.0 - half.1 } else { 0.0 };
                 influences[p1.1].0 = if y < p1.0.y as i32 { half.1 } else { 1.0 - half.1 };
@@ -133,10 +132,6 @@ pub trait Shader {
                 let mut x_ratio = 0.0;
                 let x_ratio_step = 1.0 / (max - min);
                 for x in (min as i32)..(max as i32) {
-                    if x >= buffer.width as i32 {
-                        break;
-                    }
-
                     let weights = lerp(left_weights, right_weights, x_ratio);
 
                     let fragment_colors = self.fragment(&Self::VertexShaderOut::interpolate(&varyings0, &varyings1, &varyings2, &weights));
@@ -147,7 +142,9 @@ pub trait Shader {
                         real::interpolate(&p0_unsorted.z, &p1_unsorted.z, &p2_unsorted.z, &weights) as f32
                     ];
 
-                    buffer.set_pixel(x as usize, y as usize, &fragment).unwrap();
+                    if !(x >= buffer.width as i32 || x < 0) {
+                        buffer.set_pixel(x as usize, y as usize, &fragment).unwrap();
+                    }
 
                     x_ratio += x_ratio_step;
                 }
