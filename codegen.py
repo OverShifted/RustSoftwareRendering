@@ -17,6 +17,4 @@ for i in range(1, len(letters)) :
         print(f"            {c}::interpolate(&p0.{i}, &p1.{i}, &p2.{i}, weights),")
     print("        )")
     print("    }")
-    print("}")
-    print()
-    print()
+    print("}\n\n")

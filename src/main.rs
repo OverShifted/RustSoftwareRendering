@@ -23,14 +23,14 @@ impl Shader for SimpleShader {
     type Vertex = (Vec3, Vec3, Vec2);
     type VertexShaderOut = (Vec3, Vec2);
 
-    fn vertex(&self, vertex: &Self::Vertex) -> (Vec3, Self::VertexShaderOut) {
+    fn vertex(&self, vertex: &Self::Vertex) -> (Vec4, Self::VertexShaderOut) {
         let (pos, normal, tex_pos) = *vertex;
 
-        let t = self.t * 2.0;
+        let t = self.t / 2.0;
         let mat = self.camera * Mat4::from_rotation_y(t) * Mat4::from_rotation_x(t * 2.0);
 
         (
-            (mat * Vec4::new(pos.x, pos.y, pos.z, 1.0)).xyz(),
+            mat * Vec4::new(pos.x, pos.y, pos.z, 1.0),
             (normal, tex_pos)
         )
     }
@@ -76,16 +76,14 @@ fn main() {
         t: 0.0,
         light: Vec3::new(0.5, 1.2, 0.8).normalize(),
         camera: Mat4::perspective_rh(
-            (100.0 as real).to_radians(),
+            (110.0 as real).to_radians(),
             window_size.0 as real / window_size.1 as real,
             0.01, 100.0
-        ) * Mat4::from_scale_rotation_translation(
-            Vec3::ONE,
-            Quat::IDENTITY,
-            // TODO: Z element dose not work.
-            // Vec3::new(1.0, 1.0, 10.0)
-            Vec3::ZERO
-        ).inverse(),
+        ) * Mat4::look_at_rh(
+            Vec3::new(0.0, 0.0, -2.0),
+            Vec3::new(0.0, 0.0, 1.0),
+            Vec3::new(0.0, 1.0, 0.0),
+        ),
         img: image::open("crate.jpg").unwrap()
     };
 
@@ -166,7 +164,7 @@ fn main() {
 
         delta = now.elapsed().as_secs_f64();
         if i == 0 {
-            println!("{} fps", 1.0 / delta);
+            println!("{:.3} fps", 1.0 / delta);
         }
     }
 }

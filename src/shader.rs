@@ -48,7 +48,7 @@ pub trait Shader {
     type Vertex;
     type VertexShaderOut: Interpolate;
 
-    fn vertex(&self, vertex: &Self::Vertex) -> (Vec3, Self::VertexShaderOut);
+    fn vertex(&self, vertex: &Self::Vertex) -> (Vec4, Self::VertexShaderOut);
     fn fragment(&self, varyings: &Self::VertexShaderOut) -> Vec4;
 
     fn draw(&self, buffer: &mut Buffer, vertices: &[Self::Vertex], indices: &[usize]) {
@@ -57,31 +57,39 @@ pub trait Shader {
             let (p1, varyings1) = self.vertex(&vertices[triangle_indices[1]]);
             let (p2, varyings2) = self.vertex(&vertices[triangle_indices[2]]);
 
+            // let p0 = Vec3::new(p0[0], p0[1], p0[2]) * p0[3];
+            // let p1 = Vec3::new(p1[0], p1[1], p1[2]) * p1[3];
+            // let p2 = Vec3::new(p2[0], p2[1], p2[2]) * p2[3];
+
             let p0_unsorted = p0;
             let p1_unsorted = p1;
             let p2_unsorted = p2;
 
-            let p0 = (Vec3::new(
-                p0.x.remap(-1.0, 1.0, -0.5, buffer.width as real + 0.5).ceil(),
-                p0.y.remap(1.0, -1.0, -0.5, buffer.height as real + 0.5).ceil(),
-                p0.z
-            ), 0);
+            fn screen_to_buffer_space(p: Vec4, w: usize, h: usize) -> Vec3 {
+                Vec3::new(
+                    p.x.remap(-1.0, 1.0, -0.5, w as real + 0.5).ceil(),
+                    p.y.remap(1.0, -1.0, -0.5, h as real + 0.5).ceil(),
+                    p.z
+                )
+            }
 
-            let p1 = (Vec3::new(
-                p1.x.remap(-1.0, 1.0, -0.5, buffer.width as real + 0.5).ceil(),
-                p1.y.remap(1.0, -1.0, -0.5, buffer.height as real + 0.5).ceil(),
-                p1.z
-            ), 1);
+            let p0 = (screen_to_buffer_space(p0, buffer.width, buffer.height), 0);
+            let p1 = (screen_to_buffer_space(p1, buffer.width, buffer.height), 1);
+            let p2 = (screen_to_buffer_space(p2, buffer.width, buffer.height), 2);
 
-            let p2 = (Vec3::new(
-                p2.x.remap(-1.0, 1.0, -0.5, buffer.width as real + 0.5).ceil(),
-                p2.y.remap(1.0, -1.0, -0.5, buffer.height as real + 0.5).ceil(),
-                p2.z
-            ), 2);
-
+            // Sort the points
             let (p0, p1) = if p0.0.y > p1.0.y { (p1, p0) } else { (p0, p1) };
             let (p1, p2) = if p1.0.y > p2.0.y { (p2, p1) } else { (p1, p2) };
             let (p0, p1) = if p0.0.y > p1.0.y { (p1, p0) } else { (p0, p1) };
+
+            //                 {      /|   }
+            // edge_up_half <- {     / |   }
+            //                 {    /  |   }
+            //                 {   /   |   } -> edge_full
+            //                   { `   |   }
+            //                   {  `  |   }
+            // edge_down_half <- {   ` |   }
+            //                   {    `|   }
 
             let mut edge_full = Edge::new(p0.0.xy(), p2.0.xy());
             let mut edge_up_half = Edge::new(p0.0.xy(), p1.0.xy());
