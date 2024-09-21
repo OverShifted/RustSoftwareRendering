@@ -1,7 +1,7 @@
 # Rust Software Rendering
-An experimental software renderer written in pure rust.
+An experimental software renderer written in pure Rust.
 
-![screenshot](https://github.com/OverShifted/RustSoftwareRendering/blob/master/screenshot.png?raw=true)
+![screenshot](screenshot.png)
 
 To run:
 ```sh
