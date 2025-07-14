@@ -6,6 +6,8 @@ use image::GenericImageView;
 mod buffer;
 mod utils;
 mod shader;
+mod model;
+mod obj_shader;
 use crate::utils::*;
 use crate::buffer::*;
 use crate::shader::*;
@@ -56,6 +58,9 @@ impl Shader for SimpleShader {
 }
 
 fn main() {
+    let monkey = model::load_obj("monkey.obj");
+    let indices: Vec<usize> = monkey.indices.iter().map(|i| *i as usize).collect();
+
     let window_size = (900, 900);
     let mut window_buffer: Vec<u32> = vec![0; window_size.0 * window_size.1];
     let mut frame_buffer = Buffer::new(window_size.0, window_size.1, 4);
@@ -72,7 +77,7 @@ fn main() {
 
     // window.limit_update_rate(Some(std::time::Duration::from_micros(16600)));
 
-    let mut shader = SimpleShader{
+    let mut shader = obj_shader::ObjShader{
         t: 0.0,
         light: Vec3::new(0.5, 1.2, 0.8).normalize(),
         camera: Mat4::perspective_rh(
@@ -95,60 +100,23 @@ fn main() {
         i = (i + 1) % 100;
         
         frame_buffer.clear();
-        shader.draw(&mut frame_buffer, &[
-            (Vec3::new(-0.5,  0.5,  0.5), Vec3::new(0.0, 0.0, 1.0), Vec2::new(0.0, 0.0)),
-            (Vec3::new(-0.5, -0.5,  0.5), Vec3::new(0.0, 0.0, 1.0), Vec2::new(1.0, 0.0)),
-            (Vec3::new( 0.5,  0.5,  0.5), Vec3::new(0.0, 0.0, 1.0), Vec2::new(0.0, 1.0)),
-            (Vec3::new( 0.5, -0.5,  0.5), Vec3::new(0.0, 0.0, 1.0), Vec2::new(1.0, 1.0)),
+        for y in 0..frame_buffer.height {
+            for x in 0..frame_buffer.width {
+                let top = [0.5, 0.8, 1.0, -1.0];
+                let bottom = [0.8, 1.0, 1.0, -1.0];
 
-            (Vec3::new(-0.5,  0.5, -0.5), Vec3::new(-1.0, 0.0, 0.0), Vec2::new(0.0, 0.0)),
-            (Vec3::new(-0.5, -0.5, -0.5), Vec3::new(-1.0, 0.0, 0.0), Vec2::new(1.0, 0.0)),
-            (Vec3::new(-0.5,  0.5,  0.5), Vec3::new(-1.0, 0.0, 0.0), Vec2::new(0.0, 1.0)),
-            (Vec3::new(-0.5, -0.5,  0.5), Vec3::new(-1.0, 0.0, 0.0), Vec2::new(1.0, 1.0)),
+                let y_f = y as real / frame_buffer.height as real;
+                
+                frame_buffer.set_pixel(x, y, &[
+                    top[0] * y_f + bottom[0] * (1.0 - y_f),
+                    top[1] * y_f + bottom[1] * (1.0 - y_f),
+                    top[2] * y_f + bottom[2] * (1.0 - y_f),
+                    top[3] * y_f + bottom[3] * (1.0 - y_f),
+                ]).unwrap();
+            }
+        }
 
-            (Vec3::new(-0.5,  0.5,  0.5), Vec3::new(0.0, 1.0, 0.0), Vec2::new(0.0, 0.0)),
-            (Vec3::new( 0.5,  0.5,  0.5), Vec3::new(0.0, 1.0, 0.0), Vec2::new(1.0, 0.0)),
-            (Vec3::new(-0.5,  0.5, -0.5), Vec3::new(0.0, 1.0, 0.0), Vec2::new(0.0, 1.0)),
-            (Vec3::new( 0.5,  0.5, -0.5), Vec3::new(0.0, 1.0, 0.0), Vec2::new(1.0, 1.0)),
-
-            (Vec3::new(-0.5, -0.5,  0.5), Vec3::new(0.0, -1.0, 0.0), Vec2::new(0.0, 0.0)),
-            (Vec3::new( 0.5, -0.5,  0.5), Vec3::new(0.0, -1.0, 0.0), Vec2::new(1.0, 0.0)),
-            (Vec3::new(-0.5, -0.5, -0.5), Vec3::new(0.0, -1.0, 0.0), Vec2::new(0.0, 1.0)),
-            (Vec3::new( 0.5, -0.5, -0.5), Vec3::new(0.0, -1.0, 0.0), Vec2::new(1.0, 1.0)),
-
-            (Vec3::new( 0.5,  0.5, -0.5), Vec3::new(1.0, 0.0, 0.0), Vec2::new(0.0, 0.0)),
-            (Vec3::new( 0.5, -0.5, -0.5), Vec3::new(1.0, 0.0, 0.0), Vec2::new(1.0, 0.0)),
-            (Vec3::new( 0.5,  0.5,  0.5), Vec3::new(1.0, 0.0, 0.0), Vec2::new(0.0, 1.0)),
-            (Vec3::new( 0.5, -0.5,  0.5), Vec3::new(1.0, 0.0, 0.0), Vec2::new(1.0, 1.0)),
-
-            (Vec3::new(-0.5,  0.5, -0.5), Vec3::new(0.0, 0.0, -1.0), Vec2::new(0.0, 0.0)),
-            (Vec3::new(-0.5, -0.5, -0.5), Vec3::new(0.0, 0.0, -1.0), Vec2::new(1.0, 0.0)),
-            (Vec3::new( 0.5,  0.5, -0.5), Vec3::new(0.0, 0.0, -1.0), Vec2::new(0.0, 1.0)),
-            (Vec3::new( 0.5, -0.5, -0.5), Vec3::new(0.0, 0.0, -1.0), Vec2::new(1.0, 1.0)),
-
-            // (Vec3::new( -1.0,  0.5,  0.5), Vec2::new(0.0, 0.0)),
-            // (Vec3::new( -0.9,  0.0,  0.5), Vec2::new(1.0, 0.0)),
-            // (Vec3::new( -0.5,  -0.5,  0.5), Vec2::new(0.0, 1.0)),
-
-        ], &[
-            0, 1, 2,
-            3, 1, 2,
-
-            4, 5, 6,
-            7, 5, 6,
-
-            8, 9, 10,
-            11, 9, 10,
-
-            12, 13, 14,
-            15, 13, 14,
-
-            16, 17, 18,
-            19, 17, 18,
-
-            20, 21, 22,
-            23, 21, 22,
-        ]);
+        shader.draw(&mut frame_buffer, &monkey.vertices, &monkey.indices);
 
         frame_buffer.fill_window_buffer(&mut window_buffer, window.is_key_down(Key::D)).unwrap();
         window.update_with_buffer(&window_buffer, window_size.0, window_size.1).unwrap();
@@ -159,10 +127,10 @@ fn main() {
         //     shader.t -= 0.5 * delta;
         // }
 
-        shader.t += 0.1 * delta;
-        shader.t = shader.t % (2.0 * 3.14);
+        shader.t += 0.9 * delta;
+        shader.t = shader.t % (4.0 * 3.14);
 
-        delta = now.elapsed().as_secs_f64();
+        delta = now.elapsed().as_secs_f32();
         if i == 0 {
             println!("{:.3} fps", 1.0 / delta);
         }

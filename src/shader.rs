@@ -51,11 +51,11 @@ pub trait Shader {
     fn vertex(&self, vertex: &Self::Vertex) -> (Vec4, Self::VertexShaderOut);
     fn fragment(&self, varyings: &Self::VertexShaderOut) -> Vec4;
 
-    fn draw(&self, buffer: &mut Buffer, vertices: &[Self::Vertex], indices: &[usize]) {
+    fn draw<I: Into<usize> + Copy>(&self, buffer: &mut Buffer, vertices: &[Self::Vertex], indices: &[I]) {
         for triangle_indices in indices.chunks_exact(3) {
-            let (p0, varyings0) = self.vertex(&vertices[triangle_indices[0]]);
-            let (p1, varyings1) = self.vertex(&vertices[triangle_indices[1]]);
-            let (p2, varyings2) = self.vertex(&vertices[triangle_indices[2]]);
+            let (p0, varyings0) = self.vertex(&vertices[triangle_indices[0].into()]);
+            let (p1, varyings1) = self.vertex(&vertices[triangle_indices[1].into()]);
+            let (p2, varyings2) = self.vertex(&vertices[triangle_indices[2].into()]);
 
             // let p0 = Vec3::new(p0[0], p0[1], p0[2]) * p0[3];
             // let p1 = Vec3::new(p1[0], p1[1], p1[2]) * p1[3];

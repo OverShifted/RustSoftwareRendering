@@ -9,6 +9,7 @@ edition = "2021"
 glam = "0.20.2"
 minifb = "0.20.0"
 image = "0.23.14"
+obj-rs = "0.7.4"
 # noise = "0.7.0"
 # colorgrad = "0.5.0"
 

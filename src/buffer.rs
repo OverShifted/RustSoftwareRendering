@@ -28,9 +28,9 @@ impl Buffer {
             for (i, pixel) in self.data.chunks_exact(self.depth).enumerate() {
                 let (r, g, b) = if depth {
                     (
-                        ((pixel[3] + 1.0) * 127.0) as u32,
-                        ((pixel[3] + 1.0) * 127.0) as u32,
-                        ((pixel[3] + 1.0) * 127.0) as u32
+                        ((pixel[3] + 1.0) * 123.0) as u32,
+                        ((pixel[3] + 1.0) * 123.0) as u32,
+                        ((pixel[3] + 1.0) * 123.0) as u32
                     )
                 } else {
                     (
