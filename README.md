@@ -1,7 +1,9 @@
 # Rust Software Rendering
 An experimental software renderer written in pure Rust.
 
-![screenshot](screenshot.png)
+https://github.com/user-attachments/assets/2303dd8e-d48e-4fa5-b43c-1fd64353c17e
+
+<!-- ![screenshot](screenshot.png) -->
 
 To run:
 ```sh
