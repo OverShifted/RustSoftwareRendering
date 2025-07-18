@@ -1,5 +1,4 @@
 use glam::Vec4Swizzles;
-use image::GenericImageView;
 
 use crate::{shader::Shader, utils::{real, *}};
 
@@ -7,7 +6,7 @@ pub struct ObjShader {
     pub t: real,
     pub light: Vec3,
     pub camera: Mat4,
-    pub img: image::DynamicImage
+    // pub img: image::DynamicImage
 }
 
 impl Shader for ObjShader {
@@ -28,7 +27,7 @@ impl Shader for ObjShader {
     }
 
     fn fragment(&self, varyings: &Self::VertexShaderOut) -> Vec4 {
-        let (normal, tex_pos) = *varyings;
+        let (normal, _tex_pos) = *varyings;
 
         // let pixel = self.img.get_pixel(
         //     (tex_pos.x * (self.img.width() as real - 0.001)) as u32,

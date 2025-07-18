@@ -1,3 +1,5 @@
+use crate::utils::{real, Remap};
+
 pub struct Buffer {
     data: Vec<f32>,
     pub width: usize,
@@ -17,20 +19,27 @@ impl Buffer {
         // self.data = vec![0.0; self.width * self.height * self.depth];
 
         for i in 0..self.data.len() {
-            self.data[i] = std::f32::NEG_INFINITY;
+            self.data[i] = f32::NEG_INFINITY;
         }
     }
 
-    pub fn fill_window_buffer(&self, window_buffer: &mut Vec<u32>, depth: bool) -> Result<(), &'static str> {
+    pub fn fill_window_buffer(&self, window_buffer: &mut [u32], depth: bool) -> Result<(), &'static str> {
         if self.depth < 3 {
             Err("Buffer's depth is less than 3!")
         } else {
+            let depth_range = if depth {
+                let (min, max) = self.data.chunks_exact(self.depth).map(|pixel| pixel[3]).fold((real::INFINITY, real::NEG_INFINITY), |(min, max), b| (min.min(b), max.max(b)));
+                min..max
+            } else {
+                0.0..0.0
+            };
+            
             for (i, pixel) in self.data.chunks_exact(self.depth).enumerate() {
                 let (r, g, b) = if depth {
                     (
-                        ((pixel[3] + 1.0) * 123.0) as u32,
-                        ((pixel[3] + 1.0) * 123.0) as u32,
-                        ((pixel[3] + 1.0) * 123.0) as u32
+                        pixel[3].remap(depth_range.start, depth_range.end, 0.0, 255.0) as u32,
+                        pixel[3].remap(depth_range.start, depth_range.end, 0.0, 255.0) as u32,
+                        pixel[3].remap(depth_range.start, depth_range.end, 0.0, 255.0) as u32
                     )
                 } else {
                     (
@@ -53,8 +62,8 @@ impl Buffer {
         } else {
             // TODO: Dont run fragment shader
             if self.data[(y * self.width + x) * self.depth + 3] < value[3] {
-                for i in 0..self.depth {
-                    self.data[(y * self.width + x) * self.depth + i] = value[i];
+                for (i, &v) in value.iter().enumerate().take(self.depth) {
+                    self.data[(y * self.width + x) * self.depth + i] = v;
                 }
             }
 

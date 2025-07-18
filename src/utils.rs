@@ -3,6 +3,7 @@ pub type real = f32;
 pub type Vec2 = glam::Vec2;
 pub type Vec3 = glam::Vec3;
 pub type Vec4 = glam::Vec4;
+#[allow(dead_code)]
 pub type Quat = glam::Quat;
 pub type Mat4 = glam::Mat4;
 

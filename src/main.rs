@@ -1,6 +1,4 @@
 use minifb::*;
-// use noise::{NoiseFn, Perlin};
-use glam::Vec4Swizzles;
 use image::GenericImageView;
 
 mod buffer;
@@ -14,6 +12,7 @@ use crate::shader::*;
 
 use std::time::Instant;
 
+#[allow(dead_code)]
 struct SimpleShader {
     pub t: real,
     pub light: Vec3,
@@ -59,7 +58,6 @@ impl Shader for SimpleShader {
 
 fn main() {
     let monkey = model::load_obj("monkey.obj");
-    let indices: Vec<usize> = monkey.indices.iter().map(|i| *i as usize).collect();
 
     let window_size = (900, 900);
     let mut window_buffer: Vec<u32> = vec![0; window_size.0 * window_size.1];
@@ -89,7 +87,7 @@ fn main() {
             Vec3::new(0.0, 0.0, 1.0),
             Vec3::new(0.0, 1.0, 0.0),
         ),
-        img: image::open("crate.jpg").unwrap()
+        // img: image::open("crate.jpg").unwrap()
     };
 
     let mut i = 0;
@@ -128,7 +126,7 @@ fn main() {
         // }
 
         shader.t += 0.9 * delta;
-        shader.t = shader.t % (4.0 * 3.14);
+        shader.t %= 4.0 * std::f32::consts::PI;
 
         delta = now.elapsed().as_secs_f32();
         if i == 0 {
